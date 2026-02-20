@@ -27,9 +27,13 @@ app.get('/', (req, res) => {
 const MONGODB_URI = process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {
-    console.error('Error: MONGODB_URI is not defined in environment variables');
+    console.error('FATAL ERROR: MONGODB_URI is not defined in environment variables.');
+    console.error('Please ensure you have a .env file with MONGODB_URI set, or set it in your deployment platform.');
     process.exit(1);
 }
+
+// Suppress Mongoose strictQuery warning
+mongoose.set('strictQuery', false);
 
 mongoose.connect(MONGODB_URI)
     .then(() => {
