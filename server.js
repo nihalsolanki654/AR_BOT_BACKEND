@@ -24,7 +24,12 @@ app.get('/', (req, res) => {
 });
 
 // Database Connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://nihal:nihal1234@arbot.ht878kn.mongodb.net/finance_portal';
+const MONGODB_URI = process.env.MONGODB_URI;
+
+if (!MONGODB_URI) {
+    console.error('Error: MONGODB_URI is not defined in environment variables');
+    process.exit(1);
+}
 
 mongoose.connect(MONGODB_URI)
     .then(() => {
