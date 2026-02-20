@@ -52,22 +52,3 @@ mongoose.connect(MONGODB_URI)
     .catch((error) => {
         console.error('MongoDB connection error:', error);
     });
-
-
-import express from "express";
-import path from "path";
-
-// Serve static files from Vite's dist folder
-app.use(express.static(path.join(__dirname, "dist")));
-
-// API routes (if any)
-// app.use("/api", apiRouter);
-
-// Catch-all: serve index.html for client-side routing
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "dist", "index.html"));
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
