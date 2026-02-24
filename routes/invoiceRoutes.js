@@ -1,6 +1,7 @@
 import express from 'express';
 import Invoice from '../models/Invoice.js';
 import CustomerEmail from '../models/CustomerEmail.js';
+import { syncDbToExcel } from '../utils/excelUtils.js';
 
 const router = express.Router();
 
@@ -51,6 +52,8 @@ router.post('/', async (req, res) => {
                 { companyName: req.body.companyName },
                 { upsert: true, new: true }
             );
+            // Also sync to Excel
+            await syncDbToExcel();
         }
 
         res.status(201).json(newInvoice);
@@ -75,6 +78,8 @@ router.put('/:id', async (req, res) => {
                 { companyName: req.body.companyName },
                 { upsert: true, new: true }
             );
+            // Also sync to Excel
+            await syncDbToExcel();
         }
 
         res.json(updatedInvoice);

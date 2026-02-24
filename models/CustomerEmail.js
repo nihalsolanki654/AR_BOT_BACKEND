@@ -7,7 +7,13 @@ const customerEmailSchema = new mongoose.Schema({
         unique: true,
         trim: true
     },
-    email: {
+    toEmail: {
+        type: String,
+        trim: true,
+        lowercase: true,
+        default: ''
+    },
+    ccEmail: {
         type: String,
         trim: true,
         lowercase: true,
