@@ -60,7 +60,9 @@ router.post('/', async (req, res) => {
         }
 
         // 🔥 Always sync
+        console.log('Adding invoice - triggering syncDbToExcel...');
         await syncDbToExcel();
+        console.log('invoice syncDbToExcel completed.');
 
         res.status(201).json(newInvoice);
     } catch (error) {

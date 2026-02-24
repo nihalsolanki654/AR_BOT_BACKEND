@@ -88,11 +88,19 @@ export const syncExcelToDb = async () => {
             if (rowNumber > 1) { // Skip header
                 const getCellValue = (cell) => {
                     const val = cell.value;
-                    if (val && typeof val === 'object') {
-                        // Handle hyperlinks, formulas, or rich text
-                        return (val.text || val.result || val.richText?.[0]?.text || '').toString().trim();
+                    if (val === null || val === undefined) return '';
+
+                    if (typeof val === 'object') {
+                        // Handle exceljs specific objects (hyperlinks, rich text, etc.)
+                        if (val.text) return val.text.toString().trim();
+                        if (val.result) return val.result.toString().trim();
+                        if (Array.isArray(val.richText)) {
+                            return val.richText.map(rt => rt.text).join('').trim();
+                        }
+                        // Fallback for other objects
+                        return (val.toString ? val.toString() : '').trim();
                     }
-                    return val?.toString()?.trim() || '';
+                    return val.toString().trim();
                 };
 
                 const companyName = getCellValue(row.getCell(1));
