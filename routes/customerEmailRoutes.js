@@ -1,8 +1,12 @@
 import express from 'express';
+import multer from 'multer';
 import CustomerEmail from '../models/CustomerEmail.js';
-import { syncDbToExcel, syncExcelToDb } from '../utils/excelUtils.js';
+import { syncDbToExcel, syncExcelToDb, EXCEL_FILE_PATH } from '../utils/excelUtils.js';
+import path from 'path';
+import fs from 'fs';
 
 const router = express.Router();
+const upload = multer({ dest: 'uploads/' });
 
 // GET all customer emails
 router.get('/', async (req, res) => {

@@ -1,9 +1,14 @@
 import express from 'express';
 import Invoice from '../models/Invoice.js';
 import CustomerEmail from '../models/CustomerEmail.js';
-import { syncDbToExcel } from '../utils/excelUtils.js';
+import { syncDbToExcel, EXCEL_FILE_PATH } from '../utils/excelUtils.js';
 
 const router = express.Router();
+
+router.get('/download-excel', (req, res) => {
+    res.download(EXCEL_FILE_PATH);
+});
+
 
 // GET all invoices
 router.get('/', async (req, res) => {

@@ -3,11 +3,13 @@ import path from 'path';
 import CustomerEmail from '../models/CustomerEmail.js';
 import fs from 'fs';
 
-const EXCEL_FILE_PATH = 'n:\\Output\\customers.xlsx';
+
+export const EXCEL_FILE_PATH = path.join(process.cwd(), 'output', 'customers.xlsx');
 
 // Ensure the directory exists
 const outputDir = path.dirname(EXCEL_FILE_PATH);
 if (!fs.existsSync(outputDir)) {
+    console.log(`Creating output directory: ${outputDir}`);
     fs.mkdirSync(outputDir, { recursive: true });
 }
 
