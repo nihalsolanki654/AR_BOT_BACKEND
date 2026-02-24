@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 import invoiceRoutes from './routes/invoiceRoutes.js';
 import memberRoutes from './routes/memberRoutes.js';
 import customerEmailRoutes from './routes/customerEmailRoutes.js';
-import { syncDbToExcel } from './utils/excelUtils.js';
+import { syncDbToExcel, startExcelWatcher } from './utils/excelUtils.js';
 
 dotenv.config();
 
@@ -50,6 +50,8 @@ mongoose.connect(MONGODB_URI)
         console.log('Connected to MongoDB');
         // Initial sync to ensure Excel file exists on startup
         syncDbToExcel();
+        // Start watching for manual Excel changes
+        startExcelWatcher();
         app.listen(PORT, () => {
             console.log(`Server is running on port ${PORT}`);
         });

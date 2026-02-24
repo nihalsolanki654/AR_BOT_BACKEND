@@ -16,8 +16,12 @@ if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
 }
 
+let isSyncing = false;
+
 export const syncDbToExcel = async () => {
+    if (isSyncing) return;
     try {
+        isSyncing = true;
         console.log('--- START syncDbToExcel ---');
         const customers = await CustomerEmail.find().sort({ companyName: 1 });
         console.log(`Successfully fetched ${customers.length} customers from DB.`);
@@ -68,6 +72,9 @@ export const syncDbToExcel = async () => {
         console.log('--- END syncDbToExcel ---');
     } catch (error) {
         console.error('CRITICAL ERROR in syncDbToExcel:', error);
+    } finally {
+        // Small delay to let file system settle
+        setTimeout(() => { isSyncing = false; }, 2000);
     }
 };
 
@@ -137,4 +144,23 @@ export const syncExcelToDb = async () => {
     } catch (error) {
         console.error('CRITICAL ERROR in syncExcelToDb:', error);
     }
+};
+
+let watchTimeout = null;
+export const startExcelWatcher = () => {
+    if (!fs.existsSync(EXCEL_FILE_PATH)) return;
+
+    console.log(`Real-time watcher started for: ${EXCEL_FILE_PATH}`);
+
+    fs.watch(EXCEL_FILE_PATH, (eventType) => {
+        if (isSyncing) return;
+
+        // Debounce the watcher
+        if (watchTimeout) clearTimeout(watchTimeout);
+
+        watchTimeout = setTimeout(async () => {
+            console.log('Detected Excel file change... syncing to database...');
+            await syncExcelToDb();
+        }, 1000); // Wait 1s after last change to ensure file is saved
+    });
 };
