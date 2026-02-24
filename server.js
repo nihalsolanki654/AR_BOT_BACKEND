@@ -4,6 +4,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import invoiceRoutes from './routes/invoiceRoutes.js';
 import memberRoutes from './routes/memberRoutes.js';
+import customerEmailRoutes from './routes/customerEmailRoutes.js';
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ app.use(express.json());
 // Routes
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/members', memberRoutes);
+app.use('/api/customer-emails', customerEmailRoutes);
 
 // Health Check
 app.get('/', (req, res) => {
