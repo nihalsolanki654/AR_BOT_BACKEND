@@ -52,9 +52,10 @@ router.post('/', async (req, res) => {
                 { companyName: req.body.companyName },
                 { upsert: true, new: true }
             );
-            // Also sync to Excel
-            await syncDbToExcel();
         }
+
+        // 🔥 Always sync
+        await syncDbToExcel();
 
         res.status(201).json(newInvoice);
     } catch (error) {
@@ -71,17 +72,19 @@ router.put('/:id', async (req, res) => {
             { new: true }
         );
 
-        // Sync to customer_emails if companyName is updated
         if (req.body.companyName) {
             await CustomerEmail.findOneAndUpdate(
                 { companyName: req.body.companyName },
                 { companyName: req.body.companyName },
                 { upsert: true, new: true }
             );
-            // Also sync to Excel
-            await syncDbToExcel();
         }
 
+        // 🔥 Always sync
+        await syncDbToExcel();
+
+        // 🔥 Always sync
+        await syncDbToExcel();
         res.json(updatedInvoice);
     } catch (error) {
         res.status(400).json({ message: error.message });
@@ -92,6 +95,10 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     try {
         await Invoice.findByIdAndDelete(req.params.id);
+
+        // 🔥 Sync after delete
+        await syncDbToExcel();
+
         res.json({ message: 'Invoice deleted' });
     } catch (error) {
         res.status(500).json({ message: error.message });
