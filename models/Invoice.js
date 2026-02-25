@@ -30,19 +30,28 @@ invoiceSchema.index({ invoiceDate: -1 });
 invoiceSchema.index({ paymentStatus: 1 });
 invoiceSchema.index({ createdAt: -1 });
 
-// Middleware to sync companyName to customer_emails after every save
-invoiceSchema.post('save', async function (doc) {
-    if (doc.companyName) {
-        try {
-            await mongoose.model('CustomerEmail').findOneAndUpdate(
-                { companyName: doc.companyName },
-                { companyName: doc.companyName },
-                { upsert: true, new: true }
-            );
-        } catch (error) {
-            console.error('Error syncing companyName to CustomerEmail:', error);
-        }
+// Helper to sync company name to CustomerEmail model
+const syncCustomer = async (companyName) => {
+    if (!companyName) return;
+    try {
+        await mongoose.model('CustomerEmail').findOneAndUpdate(
+            { companyName: companyName },
+            { companyName: companyName },
+            { upsert: true, new: true }
+        );
+    } catch (error) {
+        console.error('Error syncing companyName to CustomerEmail:', error);
     }
+};
+
+// Sync on creation
+invoiceSchema.post('save', async function (doc) {
+    await syncCustomer(doc.companyName);
+});
+
+// Sync on update
+invoiceSchema.post('findOneAndUpdate', async function (doc) {
+    if (doc) await syncCustomer(doc.companyName);
 });
 
 const Invoice = mongoose.model('Invoice', invoiceSchema);
