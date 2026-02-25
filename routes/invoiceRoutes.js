@@ -1,13 +1,9 @@
 import express from 'express';
 import Invoice from '../models/Invoice.js';
 import CustomerEmail from '../models/CustomerEmail.js';
-import { syncDbToExcel, EXCEL_FILE_PATH } from '../utils/excelUtils.js';
+
 
 const router = express.Router();
-
-router.get('/download-excel', (req, res) => {
-    res.download(EXCEL_FILE_PATH);
-});
 
 
 // GET all invoices
@@ -59,10 +55,7 @@ router.post('/', async (req, res) => {
             );
         }
 
-        // 🔥 Always sync
-        console.log('Adding invoice - triggering syncDbToExcel...');
-        await syncDbToExcel();
-        console.log('invoice syncDbToExcel completed.');
+
 
         res.status(201).json(newInvoice);
     } catch (error) {
@@ -87,11 +80,8 @@ router.put('/:id', async (req, res) => {
             );
         }
 
-        // 🔥 Always sync
-        await syncDbToExcel();
 
-        // 🔥 Always sync
-        await syncDbToExcel();
+
         res.json(updatedInvoice);
     } catch (error) {
         res.status(400).json({ message: error.message });
@@ -103,8 +93,7 @@ router.delete('/:id', async (req, res) => {
     try {
         await Invoice.findByIdAndDelete(req.params.id);
 
-        // 🔥 Sync after delete
-        await syncDbToExcel();
+
 
         res.json({ message: 'Invoice deleted' });
     } catch (error) {
