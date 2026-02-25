@@ -6,19 +6,35 @@ import CustomerEmail from '../models/CustomerEmail.js';
 const router = express.Router();
 
 
-// GET all invoices (with pagination)
+// GET all invoices (with pagination, search, and filter)
 router.get('/', async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 50;
         const skip = (page - 1) * limit;
+        const search = req.query.search || '';
+        const status = req.query.status || 'All';
 
-        const invoices = await Invoice.find()
+        // Build query
+        let query = {};
+
+        if (search) {
+            query.$or = [
+                { invoiceNumber: { $regex: search, $options: 'i' } },
+                { companyName: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        if (status !== 'All') {
+            query.paymentStatus = status;
+        }
+
+        const invoices = await Invoice.find(query)
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
 
-        const total = await Invoice.countDocuments();
+        const total = await Invoice.countDocuments(query);
 
         res.json({
             invoices,

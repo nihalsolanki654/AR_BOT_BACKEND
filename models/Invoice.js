@@ -13,6 +13,7 @@ const invoiceSchema = new mongoose.Schema({
     description: { type: String },
     quantity: { type: Number, default: 1 },
     total_price: { type: Number },
+    subtotal: { type: Number },
     GST: { type: Number, default: 18 },
     GST_Amount: { type: Number, default: 0 },
     paymentStatus: {
