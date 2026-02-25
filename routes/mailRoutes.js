@@ -22,12 +22,47 @@ const createTransporter = () => nodemailer.createTransport({
     },
 });
 
+// GET /api/mail/preview/:invoiceId
+router.get('/preview/:invoiceId', async (req, res) => {
+    try {
+        const invoice = await Invoice.findById(req.params.invoiceId);
+        if (!invoice) return res.status(404).json({ message: 'Invoice not found' });
+
+        const companyInvoices = await Invoice.find({
+            companyName: invoice.companyName,
+            paymentStatus: { $ne: 'Paid' }
+        }).sort({ invoiceDate: 1 });
+
+        const { senderName, fromEmail, senderPhone } = req.query;
+
+        const htmlBody = getInvoiceEmailTemplate(companyInvoices, {
+            senderName,
+            fromEmail,
+            senderPhone,
+            invoiceNo: invoice.invoiceNumber || invoice.invoice_number
+        });
+
+        res.json({
+            invoices: companyInvoices,
+            html: htmlBody
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 // POST /api/mail/send-invoice/:invoiceId
 router.post('/send-invoice/:invoiceId', async (req, res) => {
     try {
         const { senderName, fromEmail, senderPhone } = req.body;
         const invoice = await Invoice.findById(req.params.invoiceId);
         if (!invoice) return res.status(404).json({ message: 'Invoice not found' });
+
+        // Find all unpaid invoices for this company to send as a statement
+        const companyInvoices = await Invoice.find({
+            companyName: invoice.companyName,
+            paymentStatus: { $ne: 'Paid' }
+        }).sort({ invoiceDate: 1 });
 
         const company = await CustomerEmail.findOne({ companyName: invoice.companyName });
         if (!company) return res.status(404).json({ message: 'No email contacts found for this company. Please set up emails in Company Emails page.' });
@@ -41,35 +76,12 @@ router.post('/send-invoice/:invoiceId', async (req, res) => {
 
         const transporter = createTransporter();
 
-        // Helper to parse DD-MM-YYYY
-        const parseDate = (d) => {
-            if (!d) return new Date();
-            const parts = d.split('-');
-            if (parts.length === 3) {
-                return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-            }
-            return new Date(d);
-        };
-
-        const todayDate = new Date();
-        todayDate.setHours(0, 0, 0, 0);
-        const due = parseDate(invoice.dueDate);
-        due.setHours(0, 0, 0, 0);
-
-        const diffTime = due.getTime() - todayDate.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        const overdueDays = diffDays < 0 ? Math.abs(diffDays) : diffDays;
-        const diffLabel = diffDays < 0 ? overdueDays : diffDays;
-
-        // Format currency
-        const fmt = (v) => `${parseFloat(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
         const invoiceNo = invoice.invoiceNumber || invoice.invoice_number || invoice._id.toString().slice(-6).toUpperCase();
 
-        const htmlBody = getInvoiceEmailTemplate(invoice, {
+        const htmlBody = getInvoiceEmailTemplate(companyInvoices, {
             senderName,
             fromEmail,
             senderPhone,
-            diffLabel,
             invoiceNo
         });
 
