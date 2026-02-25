@@ -105,7 +105,7 @@ router.post('/send-invoice/:invoiceId', async (req, res) => {
         }
 
         const mailOptions = {
-            from: `"${senderName || 'Accounts Receivable Team'}" <${process.env.EMAIL_USER}>`,
+            from: `"${senderName || 'Accounts Receivable Team'}" <${fromEmail || process.env.EMAIL_USER}>`,
             replyTo: fromEmail,
             to: toEmails.join(', '),
             cc: ccEmails.length > 0 ? ccEmails.join(', ') : undefined,
