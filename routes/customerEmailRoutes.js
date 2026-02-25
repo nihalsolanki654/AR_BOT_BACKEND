@@ -35,6 +35,17 @@ router.get('/', async (req, res) => {
     }
 });
 
+// GET email contacts by company name
+router.get('/by-company/:name', async (req, res) => {
+    try {
+        const company = await CustomerEmail.findOne({ companyName: req.params.name });
+        if (!company) return res.status(404).json({ message: 'No email contacts found for this company.' });
+        res.json(company);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 // GET a single customer email by ID
 router.get('/:id', async (req, res) => {
     try {
