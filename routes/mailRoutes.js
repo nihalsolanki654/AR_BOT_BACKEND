@@ -119,7 +119,7 @@ router.post('/send-invoice/:invoiceId', async (req, res) => {
         console.log(`[MAIL] Attempting to deliver via Resend API...`);
 
         const { data, error } = await resend.emails.send({
-            from: `${senderName || 'AR System'} <onboarding@resend.dev>`, // Default Resend domain unless verified
+            from: process.env.RESEND_FROM_EMAIL || `${senderName || 'AR System'} <onboarding@resend.dev>`,
             reply_to: fromEmail,
             to: toEmails,
             cc: ccEmails.length > 0 ? ccEmails : undefined,
