@@ -4,9 +4,6 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import invoiceRoutes from './routes/invoiceRoutes.js';
 import memberRoutes from './routes/memberRoutes.js';
-import customerEmailRoutes from './routes/customerEmailRoutes.js';
-import mailRoutes from './routes/mailRoutes.js';
-
 
 dotenv.config();
 
@@ -14,8 +11,6 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-// app.use(cors());
-// Replace app.use(cors()); with this:
 app.use(cors({
     origin: ['https://ar-bot-frontend.vercel.app', 'http://localhost:5173', 'http://localhost:3000'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -27,8 +22,6 @@ app.use(express.json());
 // Routes
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/members', memberRoutes);
-app.use('/api/customer-emails', customerEmailRoutes);
-app.use('/api/mail', mailRoutes);
 
 // Health Check
 app.get('/', (req, res) => {
