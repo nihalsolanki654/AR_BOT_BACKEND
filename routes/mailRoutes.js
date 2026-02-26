@@ -130,7 +130,8 @@ router.post('/send-invoice/:invoiceId', async (req, res) => {
 
         if (error) {
             console.error('[MAIL] Resend API Error:', error);
-            return res.status(400).json({ message: 'Resend delivery failed', error });
+            const errorMsg = error.message || 'Resend delivery failed';
+            return res.status(400).json({ message: `Mail Error: ${errorMsg}`, details: error });
         }
 
         console.log(`[MAIL] Success! MessageId: ${data.id}`);
