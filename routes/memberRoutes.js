@@ -7,6 +7,7 @@ const router = express.Router();
 router.get('/', async (req, res) => {
     try {
         const members = await Member.find().sort({ createdAt: -1 });
+        console.log(`[MEMBERS] Loaded ${members.length} members`);
         res.json(members);
     } catch (error) {
         res.status(500).json({ message: error.message });

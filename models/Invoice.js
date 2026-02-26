@@ -24,7 +24,6 @@ const invoiceSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Performance Indexes
-invoiceSchema.index({ invoiceNumber: 1 });
 invoiceSchema.index({ companyName: 1 });
 invoiceSchema.index({ invoiceDate: -1 });
 invoiceSchema.index({ paymentStatus: 1 });

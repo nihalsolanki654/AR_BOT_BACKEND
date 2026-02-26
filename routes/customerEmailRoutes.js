@@ -29,6 +29,7 @@ router.get('/', async (req, res) => {
 
         // 3. Return all customer emails
         const customers = await CustomerEmail.find().sort({ companyName: 1 });
+        console.log(`[CUSTOMER-EMAILS] Sync and load complete. Found ${customers.length} companies.`);
         res.json(customers);
     } catch (error) {
         res.status(500).json({ message: error.message });
