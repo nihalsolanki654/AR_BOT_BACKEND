@@ -88,8 +88,19 @@ router.post('/send-invoice/:invoiceId', async (req, res) => {
             return res.status(400).json({ message: 'No TO email addresses configured for this company. Please add them in Company Emails page.' });
         }
 
-        console.log(`[MAIL] Starting send-invoice for invoice: ${req.params.invoiceId}`);
+        console.log(`[MAIL] Starting send-invoice for company: ${invoice.companyName}`);
+        console.log(`[MAIL] From: ${fromEmail}, To: ${toEmails.join(', ')}`);
+
         const transporter = createTransporter();
+        console.log('[MAIL] Transporter created. Verifying connection...');
+
+        try {
+            await transporter.verify();
+            console.log('[MAIL] SMTP Connection verified successfully');
+        } catch (verifyErr) {
+            console.error('[MAIL] SMTP Verification FAILED:', verifyErr);
+            throw new Error(`SMTP Connection Failed: ${verifyErr.message}`);
+        }
 
         const invoiceNo = invoice.invoiceNumber || invoice.invoice_number || invoice._id.toString().slice(-6).toUpperCase();
 
@@ -122,7 +133,7 @@ router.post('/send-invoice/:invoiceId', async (req, res) => {
         }
 
         const mailOptions = {
-            from: `"${senderName || 'Accounts Receivable Team'}" <${fromEmail || process.env.EMAIL_USER}>`,
+            from: `"${senderName || 'Accounts Receivable Team'}" <${process.env.EMAIL_USER}>`, // Use authenticated user for from
             replyTo: fromEmail || process.env.EMAIL_USER,
             to: toEmails.join(', '),
             cc: ccEmails.length > 0 ? ccEmails.join(', ') : undefined,
@@ -131,12 +142,14 @@ router.post('/send-invoice/:invoiceId', async (req, res) => {
             attachments: attachments
         };
 
-        console.log(`[MAIL] Attempting to send to: ${mailOptions.to}`);
-        await transporter.sendMail(mailOptions);
-        console.log(`[MAIL] Success: Email sent to ${invoice.companyName}`);
+        console.log(`[MAIL] Attempting to deliver via Nodemailer to ${mailOptions.to}...`);
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`[MAIL] Success! MessageId: ${info.messageId}`);
+        console.log(`[MAIL] Response: ${info.response}`);
 
         res.json({
-            message: `Email sent successfully to ${toEmails.length} recipient(s)${ccEmails.length > 0 ? ` and ${ccEmails.length} CC` : ''}.`,
+            message: `Email sent successfully to ${toEmails.length} recipient(s).`,
+            messageId: info.messageId,
             to: toEmails,
             cc: ccEmails,
         });
