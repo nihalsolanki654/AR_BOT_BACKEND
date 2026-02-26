@@ -48,11 +48,16 @@ if (!MONGODB_URI) {
 mongoose.set('strictQuery', false);
 
 mongoose.connect(MONGODB_URI)
-    .then(() => {
+    .then(async () => {
         console.log('Connected to MongoDB');
+
+        // Log counts to verify data is accessible
+        const invCount = await mongoose.model('Invoice').countDocuments();
+        console.log(`[DATABASE] Found ${invCount} invoices in ${mongoose.connection.name}`);
 
         app.listen(PORT, () => {
             console.log(`Server is running on port ${PORT}`);
+            console.log(`[HEALTH] http://localhost:${PORT}/api/invoices`);
         });
     })
     .catch((error) => {
