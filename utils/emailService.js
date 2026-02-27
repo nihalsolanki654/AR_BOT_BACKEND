@@ -4,6 +4,27 @@ import { getInvoiceEmailTemplate } from './emailTemplates.js';
 
 dotenv.config();
 
+// Create a reusable transporter with connection pooling for fast delivery
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    pool: true, // Use connection pooling
+    maxConnections: 3,
+    maxMessages: 100,
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
+
+// Verify connection on startup to ensure it's always ready
+transporter.verify((error) => {
+    if (error) {
+        console.error('[EMAIL] SMTP Connection Error:', error);
+    } else {
+        console.log('[EMAIL] SMTP Server ready for fast delivery');
+    }
+});
+
 /**
  * Send an automated invoice email using Gmail SMTP
  * @param {Object} invoice - The invoice document
@@ -11,56 +32,31 @@ dotenv.config();
  * @returns {Promise<Object>} Nodemailer response
  */
 export const sendInvoiceEmail = async (invoice, config) => {
-    console.log(`[EMAIL] Preparing to send email for: ${invoice.companyName}`);
-    console.log(`[EMAIL] Raw config from DB:`, {
-        to: config.toEmails,
-        cc: config.ccEmails
-    });
-
     const toRecipients = (config.toEmails || []).filter(email => email && email.trim() !== '');
     const ccRecipients = (config.ccEmails || []).filter(email => email && email.trim() !== '');
 
-    console.log(`[EMAIL] Processed recipients:`, {
-        to: toRecipients,
-        cc: ccRecipients
-    });
-
     if (toRecipients.length === 0) {
-        throw new Error(`No valid "To" email addresses found for ${invoice.companyName}. Please check your configuration.`);
+        throw new Error(`No valid "To" email addresses found for ${invoice.companyName}.`);
     }
-
-    const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS
-        }
-    });
 
     const htmlContent = getInvoiceEmailTemplate(invoice, config);
     const invoiceNo = invoice.invoiceNumber || invoice.invoice_number || 'N/A';
 
     const mailOptions = {
-        from: `"Accounts Receivable" <${process.env.EMAIL_USER}>`,
+        from: `"Accounts Receivable Team" <${process.env.EMAIL_USER}>`,
         to: toRecipients.join(', '),
         cc: ccRecipients.length > 0 ? ccRecipients.join(', ') : undefined,
-        subject: `Invoice Statement #${invoiceNo} - ${invoice.companyName}`,
-        html: htmlContent
+        subject: `Invoice Announcement #${invoiceNo} - ${invoice.companyName}`,
+        html: htmlContent,
+        replyTo: process.env.EMAIL_USER
     };
-
-    console.log(`[EMAIL] SMTP Mail Options:`, {
-        from: mailOptions.from,
-        to: mailOptions.to,
-        cc: mailOptions.cc,
-        subject: mailOptions.subject
-    });
 
     try {
         const info = await transporter.sendMail(mailOptions);
-        console.log('[EMAIL] SMTP Success info:', info);
+        console.log('[EMAIL] Fast Delivery Success:', info.messageId);
         return info;
     } catch (error) {
-        console.error('[EMAIL] SMTP Error:', error);
-        throw new Error(`Failed to send email to ${toRecipients.join(', ')}. ${error.message}`);
+        console.error('[EMAIL] Delivery Error:', error);
+        throw new Error(`Failed to send email: ${error.message}`);
     }
 };

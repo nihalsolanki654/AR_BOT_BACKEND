@@ -56,39 +56,50 @@ export const getInvoiceEmailTemplate = (invoice, config) => {
             <div class="greeting">Dear ${companyName},</div>
             
             <div class="message-box">
-                The Invoice’s given below will be due on the due date’s mentioned in the table below. We request you to arrange for its payment on its due date.
+                The Invoice details given below will be due on the due dates mentioned in the table. We request you to arrange for payment on its due date.
             </div>
 
-            <div style="margin-bottom: 20px; font-size: 13px; color: #475569;">
-                <strong>To:</strong> ${config.toEmails.join(', ')} <br>
-                ${config.ccEmails.length > 0 ? `<strong>CC:</strong> ${config.ccEmails.join(', ')}` : ''}
-            </div>
+            <!-- Horizontal Details Grid -->
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; border: 1px solid #f1f5f9; border-radius: 8px; overflow: hidden;">
+                <tr>
+                    <td style="padding: 15px; background: #f8fafc; border-right: 1px solid #f1f5f9; width: 33%;">
+                        <div style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 5px;">Recipient Info</div>
+                        <div style="font-size: 13px; font-weight: 700; color: #1e293b;">To: ${config.toEmails.join(', ')}</div>
+                        ${config.ccEmails.length > 0 ? `<div style="font-size: 11px; color: #64748b; margin-top: 3px;">CC: ${config.ccEmails.join(', ')}</div>` : ''}
+                    </td>
+                    <td style="padding: 15px; background: #ffffff; border-right: 1px solid #f1f5f9; width: 33%;">
+                        <div style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 5px;">Billing Cycle</div>
+                        <div style="font-size: 13px; font-weight: 700; color: #1e293b;">Invoice: ${invoiceDate || '-'}</div>
+                        <div style="font-size: 11px; color: #e11d48; font-weight: 700; margin-top: 3px;">Due: ${dueDate || '-'}</div>
+                    </td>
+                    <td style="padding: 15px; background: #f8fafc; width: 34%;">
+                        <div style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 5px;">Payment Terms</div>
+                        <div style="font-size: 13px; font-weight: 700; color: #1e293b;">${invoice.Terms || '0'} Days Credit</div>
+                        <div style="font-size: 11px; color: #64748b; margin-top: 3px;">Status: Payment Requested</div>
+                    </td>
+                </tr>
+            </table>
 
+            <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 10px; padding-left: 5px;">Itemized Invoice Summary</div>
             <table class="table">
                 <thead>
                     <tr>
-                        <th>Invoice #</th>
-                        <th>Date</th>
-                        <th>Due Date</th>
-                        <th>Terms</th>
-                        <th style="width: 25%">Description</th>
+                        <th style="padding-left: 15px;">Invoice #</th>
+                        <th>Description</th>
                         <th>Price</th>
                         <th>Qty</th>
                         <th>GST Amt</th>
-                        <th>Total</th>
+                        <th style="padding-right: 15px; text-align: right;">Total</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td style="font-weight: 700;">${invNo}</td>
-                        <td>${invoiceDate || '-'}</td>
-                        <td>${dueDate || '-'}</td>
-                        <td>${invoice.Terms || '0'} Days</td>
-                        <td>${description || '-'}</td>
-                        <td>₹${price}</td>
-                        <td>${quantity || 1}</td>
-                        <td>₹${gstAmt}</td>
-                        <td style="font-weight: 700; color: #2563eb;">₹${total}</td>
+                        <td style="padding-left: 15px; font-weight: 700; color: #1e293b;">${invNo}</td>
+                        <td style="font-size: 11px; color: #64748b;">${description || 'Standard Service'}</td>
+                        <td style="font-weight: 600;">₹${price}</td>
+                        <td style="font-weight: 600;">${quantity || 1}</td>
+                        <td style="font-weight: 600;">₹${gstAmt}</td>
+                        <td style="padding-right: 15px; text-align: right; font-weight: 800; color: #2563eb; font-size: 14px;">₹${total}</td>
                     </tr>
                 </tbody>
             </table>
