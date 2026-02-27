@@ -4,27 +4,6 @@ import { getInvoiceEmailTemplate } from './emailTemplates.js';
 
 dotenv.config();
 
-// Create a reusable transporter with connection pooling for fast delivery
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    pool: true, // Use connection pooling
-    maxConnections: 3,
-    maxMessages: 100,
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    }
-});
-
-// Verify connection on startup to ensure it's always ready
-transporter.verify((error) => {
-    if (error) {
-        console.error('[EMAIL] SMTP Connection Error:', error);
-    } else {
-        console.log('[EMAIL] SMTP Server ready for fast delivery');
-    }
-});
-
 /**
  * Send an automated invoice email using Gmail SMTP
  * @param {Object} invoice - The invoice document
@@ -32,31 +11,51 @@ transporter.verify((error) => {
  * @returns {Promise<Object>} Nodemailer response
  */
 export const sendInvoiceEmail = async (invoice, config) => {
+    console.log(`[EMAIL] Starting delivery for: ${invoice.companyName}`);
+
+    // 1. Clean and validate recipients
     const toRecipients = (config.toEmails || []).filter(email => email && email.trim() !== '');
     const ccRecipients = (config.ccEmails || []).filter(email => email && email.trim() !== '');
 
     if (toRecipients.length === 0) {
-        throw new Error(`No valid "To" email addresses found for ${invoice.companyName}.`);
+        throw new Error(`No "To" email addresses configured for ${invoice.companyName}.`);
     }
 
-    const htmlContent = getInvoiceEmailTemplate(invoice, config);
-    const invoiceNo = invoice.invoiceNumber || invoice.invoice_number || 'N/A';
-
-    const mailOptions = {
-        from: `"Accounts Receivable Team" <${process.env.EMAIL_USER}>`,
-        to: toRecipients.join(', '),
-        cc: ccRecipients.length > 0 ? ccRecipients.join(', ') : undefined,
-        subject: `Invoice Announcement #${invoiceNo} - ${invoice.companyName}`,
-        html: htmlContent,
-        replyTo: process.env.EMAIL_USER
-    };
+    // 2. Setup transporter (Creating fresh per request for maximum reliability with Gmail)
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS
+        }
+    });
 
     try {
+        // 3. Generate content with safety
+        const htmlContent = getInvoiceEmailTemplate(invoice, config);
+        const invoiceNo = invoice.invoiceNumber || invoice.invoice_number || 'N/A';
+
+        const mailOptions = {
+            from: `"Accounts Receivable Team" <${process.env.EMAIL_USER}>`,
+            to: toRecipients.join(', '),
+            cc: ccRecipients.length > 0 ? ccRecipients.join(', ') : undefined,
+            subject: `Invoice Announcement #${invoiceNo} - ${invoice.companyName}`,
+            html: htmlContent,
+            replyTo: process.env.EMAIL_USER
+        };
+
+        console.log(`[EMAIL] Sending to: ${mailOptions.to} (CC: ${mailOptions.cc || 'None'})`);
+
+        // 4. Send
         const info = await transporter.sendMail(mailOptions);
-        console.log('[EMAIL] Fast Delivery Success:', info.messageId);
+        console.log('[EMAIL] Success! Message ID:', info.messageId);
         return info;
     } catch (error) {
-        console.error('[EMAIL] Delivery Error:', error);
-        throw new Error(`Failed to send email: ${error.message}`);
+        console.error('[EMAIL] Detailed Error:', error);
+        // Throw a cleaner message to the frontend
+        if (error.code === 'EAUTH') {
+            throw new Error('Gmail authentication failed. Please check your App Password.');
+        }
+        throw new Error(`Email delivery failed: ${error.message}`);
     }
 };

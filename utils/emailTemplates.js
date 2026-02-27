@@ -64,8 +64,8 @@ export const getInvoiceEmailTemplate = (invoice, config) => {
                 <tr>
                     <td style="padding: 15px; background: #f8fafc; border-right: 1px solid #f1f5f9; width: 33%;">
                         <div style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 5px;">Recipient Info</div>
-                        <div style="font-size: 13px; font-weight: 700; color: #1e293b;">To: ${config.toEmails.join(', ')}</div>
-                        ${config.ccEmails.length > 0 ? `<div style="font-size: 11px; color: #64748b; margin-top: 3px;">CC: ${config.ccEmails.join(', ')}</div>` : ''}
+                        <div style="font-size: 13px; font-weight: 700; color: #1e293b;">To: ${(config?.toEmails || []).join(', ')}</div>
+                        ${(config?.ccEmails?.length > 0) ? `<div style="font-size: 11px; color: #64748b; margin-top: 3px;">CC: ${config.ccEmails.join(', ')}</div>` : ''}
                     </td>
                     <td style="padding: 15px; background: #ffffff; border-right: 1px solid #f1f5f9; width: 33%;">
                         <div style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 5px;">Billing Cycle</div>
