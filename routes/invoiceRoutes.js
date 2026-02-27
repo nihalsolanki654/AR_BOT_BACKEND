@@ -1,5 +1,7 @@
 import express from 'express';
 import Invoice from '../models/Invoice.js';
+import CompanyEmail from '../models/CompanyEmail.js';
+import { sendInvoiceEmail } from '../utils/emailService.js';
 
 
 const router = express.Router();
@@ -158,6 +160,34 @@ router.delete('/:id', async (req, res) => {
 
         res.json({ message: 'Invoice deleted' });
     } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// POST send email for invoice
+router.post('/:id/send-email', async (req, res) => {
+    try {
+        const invoice = await Invoice.findById(req.params.id);
+        if (!invoice) {
+            return res.status(404).json({ message: 'Invoice not found' });
+        }
+
+        // Search for company configuration (case-insensitive)
+        const normalizedName = invoice.companyName.trim().toLowerCase();
+        const config = await CompanyEmail.findOne({
+            companyName: { $regex: new RegExp(`^${normalizedName}$`, 'i') }
+        });
+
+        if (!config) {
+            return res.status(400).json({
+                message: `No email configuration found for "${invoice.companyName}". Please set up emails in the Company Emails page.`
+            });
+        }
+
+        const emailResult = await sendInvoiceEmail(invoice, config);
+        res.json({ message: 'Email sent successfully', result: emailResult });
+    } catch (error) {
+        console.error('Email Route Error:', error);
         res.status(500).json({ message: error.message });
     }
 });

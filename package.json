@@ -15,6 +15,7 @@
     "mongoose": "^9.2.1",
     "multer": "^2.0.2",
     "nodemon": "^3.1.11",
-    "pdf-parse": "^2.4.5"
+    "pdf-parse": "^2.4.5",
+    "resend": "^6.9.2"
   }
 }
