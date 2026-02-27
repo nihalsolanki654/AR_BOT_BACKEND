@@ -21,14 +21,19 @@ export const sendInvoiceEmail = async (invoice, config) => {
         throw new Error(`No "To" email addresses configured for ${invoice.companyName}.`);
     }
 
-    // 2. Setup transporter (Creating fresh per request for maximum reliability with Gmail)
+    // 2. Setup transporter (Forcing IPv4 to fix ENETUNREACH on live server)
     const transporter = nodemailer.createTransport({
-        service: 'gmail',
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
         auth: {
             user: process.env.EMAIL_USER,
             pass: process.env.EMAIL_PASS
-        }
+        },
+        family: 4 // Force IPv4 to fix ENETUNREACH
     });
+
+    // We removed the pooling/service:gmail for maximum reliability on live servers
 
     try {
         // 3. Generate content with safety
