@@ -5,13 +5,13 @@ dotenv.config();
 
 /**
  * Send an automated invoice email using Brevo (Direct HTTP API)
- * This is 100% reliable and bypasses ESM import errors.
+ * Uses dual-header authentication to support both old and new Brevo keys.
  * @param {Object} invoice - The invoice document
  * @param {Object} config - The CompanyEmail configuration
  * @returns {Promise<Object>} API response
  */
 export const sendInvoiceEmail = async (invoice, config) => {
-    console.log(`[EMAIL] Using Brevo HTTP for: ${invoice.companyName}`);
+    console.log(`[EMAIL] Executing Brevo delivery for: ${invoice.companyName}`);
 
     // 1. Clean and validate recipients
     const toRecipients = (config.toEmails || []).filter(email => email && email.trim() !== '');
@@ -19,6 +19,11 @@ export const sendInvoiceEmail = async (invoice, config) => {
 
     if (toRecipients.length === 0) {
         throw new Error(`No "To" email addresses configured for ${invoice.companyName}.`);
+    }
+
+    const apiKey = process.env.BREVO_API_KEY;
+    if (!apiKey) {
+        throw new Error('BREVO_API_KEY is missing. Please add it to your .env or Render settings.');
     }
 
     try {
@@ -39,11 +44,13 @@ export const sendInvoiceEmail = async (invoice, config) => {
         }
 
         // 3. Send via Native Fetch (Node 18+)
+        // We use both 'api-key' and 'x-sib-api-key' for maximum compatibility with old/new keys
         const response = await fetch('https://api.brevo.com/v3/smtp/email', {
             method: 'POST',
             headers: {
                 'accept': 'application/json',
-                'api-key': process.env.BREVO_API_KEY,
+                'api-key': apiKey.trim(),
+                'x-sib-api-key': apiKey.trim(), // Legacy support
                 'content-type': 'application/json'
             },
             body: JSON.stringify(payload)
@@ -52,14 +59,18 @@ export const sendInvoiceEmail = async (invoice, config) => {
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.message || `Brevo API returned ${response.status}`);
+            // Check if it's an authorization error
+            if (response.status === 401 || response.status === 403) {
+                throw new Error(`Invalid API Key. Brevo says: ${data.message || 'Access Denied'}. Make sure you are using the v3 API key, not the SMTP password.`);
+            }
+            throw new Error(data.message || `Brevo Error: ${response.status}`);
         }
 
         console.log('[EMAIL] Success! Message ID:', data.messageId);
         return data;
 
     } catch (error) {
-        console.error('[EMAIL] Brevo HTTP Error:', error.message);
-        throw new Error(`Email delivery blocked by Brevo: ${error.message}`);
+        console.error('[EMAIL] Brevo Error Detail:', error.message);
+        throw new Error(error.message);
     }
 };
