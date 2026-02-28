@@ -7,10 +7,10 @@ const router = express.Router();
 // GET all companies (Configurations + discovery from Invoices)
 router.get('/', async (req, res) => {
     try {
-        const garbageValues = ['bill to', 'customer', 'n/a', 'unknown', 'name', 'test', null, undefined];
+        const garbageValues = ['bill to', 'customer', 'n/a', 'unknown', 'name', 'test', 'bill to:', 'ship to', 'ship to:'];
+        const garbageRegex = new RegExp(`^(${garbageValues.join('|')})$`, 'i');
 
         // 1. PHYSICAL CLEANUP: Delete any existing garbage records from the database
-        // This handles cases where 'bill to' was accidentally saved previously
         await CompanyEmail.deleteMany({
             companyName: { $regex: garbageRegex }
         });
@@ -82,7 +82,7 @@ router.get('/unconfigured', async (req, res) => {
 
                 // Filter out obvious garbage values from old data
                 const lowerName = name.toLowerCase();
-                const garbageValues = ['bill to', 'customer', 'n/a', 'unknown', 'name', 'test'];
+                const garbageValues = ['bill to', 'customer', 'n/a', 'unknown', 'name', 'test', 'bill to:', 'ship to', 'ship to:'];
                 if (garbageValues.includes(lowerName)) return false;
 
                 // Filter out those already configured (case-insensitive)
@@ -101,10 +101,12 @@ router.post('/', async (req, res) => {
     try {
         const { companyName, toEmails, ccEmails } = req.body;
 
-        // Check if already exists
-        const existing = await CompanyEmail.findOne({ companyName });
+        // Check if already exists (Case-Insensitive)
+        const existing = await CompanyEmail.findOne({
+            companyName: { $regex: new RegExp(`^${companyName.trim()}$`, 'i') }
+        });
         if (existing) {
-            return res.status(400).json({ message: 'Company already configured' });
+            return res.status(400).json({ message: 'This company is already configured.' });
         }
 
         const config = new CompanyEmail({
