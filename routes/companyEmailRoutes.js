@@ -12,7 +12,7 @@ router.get('/', async (req, res) => {
         // 1. PHYSICAL CLEANUP: Delete any existing garbage records from the database
         // This handles cases where 'bill to' was accidentally saved previously
         await CompanyEmail.deleteMany({
-            companyName: { $in: garbageValues.map(v => new RegExp(`^${v}$`, 'i')) }
+            companyName: { $regex: garbageRegex }
         });
 
         // 2. Get all unique company names from Invoices
@@ -30,7 +30,8 @@ router.get('/', async (req, res) => {
             const trimmedName = name.trim();
             const lowerName = trimmedName.toLowerCase();
 
-            if (garbageValues.includes(lowerName)) continue;
+            // Skip if matches garbage regex
+            if (garbageRegex.test(lowerName)) continue;
 
             if (!configMap.has(lowerName)) {
                 // Physically add to the CompanyEmail collection
