@@ -22,8 +22,10 @@ export const sendInvoiceEmail = async (invoice, config) => {
     }
 
     try {
-        // 2. Setup Brevo Client
-        const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+        // 2. Setup Brevo Client with correct v3 pattern
+        let apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+
+        // Configure API key
         apiInstance.setApiKey(SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY);
 
         const htmlContent = getInvoiceEmailTemplate(invoice, config);
@@ -42,13 +44,21 @@ export const sendInvoiceEmail = async (invoice, config) => {
 
         sendSmtpEmail.replyTo = { email: "solankinihal111@gmail.com" };
 
-        // 4. Send via HTTP (Bypasses Render SMTP blocks)
+        // 4. Send via HTTP
         const data = await apiInstance.sendTransacEmail(sendSmtpEmail);
         console.log('[EMAIL] Success! Message ID:', data.body.messageId);
         return data;
 
     } catch (error) {
-        console.error('[EMAIL] Brevo API Error:', error.response ? error.response.body : error.message);
-        throw new Error(`Email delivery failed (Brevo): ${error.message}`);
+        // Detailed error logging for Brevo
+        const errorDetail = error.response ? error.response.body : error.message;
+        console.error('[EMAIL] Brevo API Error:', errorDetail);
+
+        // Return a cleaner error message to the UI
+        const msg = (error.response && error.response.body && error.response.body.message)
+            ? error.response.body.message
+            : error.message;
+
+        throw new Error(`Email delivery failed (Brevo): ${msg}`);
     }
 };
