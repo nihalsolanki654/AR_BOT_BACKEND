@@ -1,4 +1,4 @@
-import * as SibApiV3Sdk from '@getbrevo/brevo';
+import { TransactionalEmailsApi, SendSmtpEmail, TransactionalEmailsApiApiKeys } from '@getbrevo/brevo';
 import dotenv from 'dotenv';
 import { getInvoiceEmailTemplate } from './emailTemplates.js';
 
@@ -22,19 +22,17 @@ export const sendInvoiceEmail = async (invoice, config) => {
     }
 
     try {
-        // 2. Setup Brevo Client with defensive initialization
-        // Some versions of the library export classes differently in ESM
-        const apiInstance = new (SibApiV3Sdk.TransactionalEmailsApi || SibApiV3Sdk.default.TransactionalEmailsApi)();
+        // 2. Setup Brevo Client using Named Imports
+        const apiInstance = new TransactionalEmailsApi();
 
         // Configure API key
-        const apiKey = SibApiV3Sdk.TransactionalEmailsApiApiKeys?.apiKey || SibApiV3Sdk.default?.TransactionalEmailsApiApiKeys?.apiKey;
-        apiInstance.setApiKey(apiKey, process.env.BREVO_API_KEY);
+        apiInstance.setApiKey(TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY);
 
         const htmlContent = getInvoiceEmailTemplate(invoice, config);
         const invoiceNo = invoice.invoiceNumber || invoice.invoice_number || 'N/A';
 
         // 3. Prepare Email Request
-        const sendSmtpEmail = new (SibApiV3Sdk.SendSmtpEmail || SibApiV3Sdk.default.SendSmtpEmail)();
+        const sendSmtpEmail = new SendSmtpEmail();
         sendSmtpEmail.subject = `Invoice Announcement #${invoiceNo} - ${invoice.companyName}`;
         sendSmtpEmail.htmlContent = htmlContent;
         sendSmtpEmail.sender = { name: "AR_EMAIL", email: "solankinihal111@gmail.com" };
