@@ -7,11 +7,18 @@ const router = express.Router();
 // GET all companies (Configurations + discovery from Invoices)
 router.get('/', async (req, res) => {
     try {
-        // 1. Get all unique company names from Invoices
-        const invoiceCompanies = await Invoice.distinct('companyName');
         const garbageValues = ['bill to', 'customer', 'n/a', 'unknown', 'name', 'test', null, undefined];
 
-        // 2. Identify and create stubs for new companies
+        // 1. PHYSICAL CLEANUP: Delete any existing garbage records from the database
+        // This handles cases where 'bill to' was accidentally saved previously
+        await CompanyEmail.deleteMany({
+            companyName: { $in: garbageValues.map(v => new RegExp(`^${v}$`, 'i')) }
+        });
+
+        // 2. Get all unique company names from Invoices
+        const invoiceCompanies = await Invoice.distinct('companyName');
+
+        // 3. Identify and create stubs for new companies
         // We do this to make discovery PERSISTENT in the database
         const existingConfigs = await CompanyEmail.find();
         const configMap = new Map();
@@ -38,11 +45,11 @@ router.get('/', async (req, res) => {
         }
 
         if (newStubs.length > 0) {
-            console.log(`[SYNC] Creating ${newStubs.length} new company stubs from invoices`);
+            console.log(`[SYNC] Creating ${newStubs.length} new company stubs`);
             await CompanyEmail.insertMany(newStubs);
         }
 
-        // 3. Return the updated, sorted list
+        // 4. Return the updated, cleaned, and sorted list
         const allConfigs = await CompanyEmail.find().sort({ companyName: 1 });
         const results = allConfigs.map(c => ({
             companyName: c.companyName,
