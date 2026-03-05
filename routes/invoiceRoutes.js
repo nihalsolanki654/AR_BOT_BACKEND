@@ -184,7 +184,8 @@ router.post('/:id/send-email', async (req, res) => {
             });
         }
 
-        const emailResult = await sendInvoiceEmail(invoice, config);
+        const type = req.body.type || 'due';
+        const emailResult = await sendInvoiceEmail(invoice, config, type);
         res.json({ message: 'Email sent successfully', result: emailResult });
     } catch (error) {
         console.error('Email Route Error:', error);

@@ -10,8 +10,8 @@ dotenv.config();
  * @param {Object} config - The CompanyEmail configuration
  * @returns {Promise<Object>} API response
  */
-export const sendInvoiceEmail = async (invoice, config) => {
-    console.log(`[EMAIL] Executing Brevo delivery for: ${invoice.companyName}`);
+export const sendInvoiceEmail = async (invoice, config, type = 'due') => {
+    console.log(`[EMAIL] Executing Brevo delivery for: ${invoice.companyName} (${type})`);
 
     // 1. Clean and validate recipients
     const toRecipients = (config.toEmails || []).filter(email => email && email.trim() !== '');
@@ -27,14 +27,22 @@ export const sendInvoiceEmail = async (invoice, config) => {
     }
 
     try {
-        const htmlContent = getInvoiceEmailTemplate(invoice, config);
+        const htmlContent = getInvoiceEmailTemplate(invoice, config, type);
         const invoiceNo = invoice.invoiceNumber || invoice.invoice_number || 'N/A';
+
+        // Dynamic Subject based on type
+        let subject = `Invoice Announcement #${invoiceNo} - ${invoice.companyName}`;
+        if (type === 'overdue') {
+            subject = `IMPORTANT: Overdue Invoice Notification #${invoiceNo} - ${invoice.companyName}`;
+        } else if (type === 'paid') {
+            subject = `Payment Received - Thank You! (Invoice #${invoiceNo})`;
+        }
 
         // 2. Prepare Payload
         const payload = {
             sender: { name: "AR_EMAIL", email: "solankinihal111@gmail.com" },
             to: toRecipients.map(email => ({ email })),
-            subject: `Invoice Announcement #${invoiceNo} - ${invoice.companyName}`,
+            subject: subject,
             htmlContent: htmlContent,
             replyTo: { email: "solankinihal111@gmail.com" }
         };
