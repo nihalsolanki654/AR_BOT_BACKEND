@@ -160,14 +160,14 @@ export const getInvoiceEmailTemplate = (invoice, config, type = 'due', assets = 
                     <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 40px;">
                         <tr>
                             <td style="border-top: 2px solid #f1f5f9; padding-top: 30px;">
-                                <p style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a;">Best Regards,</p>
-                                <p style="margin: 4px 0 0 0; font-size: 16px; font-weight: 500; color: #475569;">Accounts Receivable Team</p>
-                                <p style="margin: 2px 0 0 0; font-size: 14px; font-weight: 800; color: #059669;">AR_EMAIL Automated Bot</p>
+                                <p style="margin: 0; font-size: 16px; font-weight: 500; color: #0f172a;">Best Regards,</p>
+                                <div style="height: 24px;"></div>
+                                <p style="margin: 0; font-size: 16px; font-weight: 500; color: #0f172a;">Accounts Receivable Team</p>
                                 
                                 ${assets.picture1 || assets.picture2 ? `
-                                <div style="margin-top: 20px;">
-                                    ${assets.picture1 ? `<img src="${assets.picture1}" alt="Signature 1" style="max-height: 80px; margin-right: 15px; margin-bottom: 10px; display: inline-block;">` : ''}
-                                    ${assets.picture2 ? `<img src="${assets.picture2}" alt="Signature 2" style="max-height: 80px; margin-bottom: 10px; display: inline-block;">` : ''}
+                                <div style="margin-top: 15px;">
+                                    ${assets.picture1 ? `<img src="${assets.picture1}" alt="Tecnoprism" style="max-height: 70px; margin-right: 10px; display: inline-block; vertical-align: middle;">` : ''}
+                                    ${assets.picture2 ? `<img src="${assets.picture2}" alt="Partner" style="max-height: 70px; display: inline-block; vertical-align: middle;">` : ''}
                                 </div>
                                 ` : ''}
                             </td>
