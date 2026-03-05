@@ -3,6 +3,42 @@ import Invoice from '../models/Invoice.js';
 import CompanyEmail from '../models/CompanyEmail.js';
 import { sendInvoiceEmail } from '../utils/emailService.js';
 
+// --- Helpers to match frontend logic ---
+const parseDate = (dateStr) => {
+    if (!dateStr) return null;
+    if (typeof dateStr !== 'string') return new Date(dateStr);
+
+    if (dateStr.includes('-')) {
+        const parts = dateStr.split('-');
+        // Check if YYYY-MM-DD
+        if (parts[0].length === 4) return new Date(dateStr);
+        // Otherwise assume DD-MM-YYYY
+        return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+    }
+    return new Date(dateStr);
+};
+
+const getPaymentStatus = (invoice) => {
+    const balance = parseFloat(invoice.balance_due || 0);
+    if (balance <= 0) return 'Paid';
+
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const due = parseDate(invoice.dueDate);
+    if (due) {
+        due.setHours(0, 0, 0, 0);
+        if (due < today) return 'Overdue';
+        if (due.getTime() === today.getTime()) return 'Due Today';
+    }
+
+    if (invoice.paymentStatus && ['Paid', 'Overdue', 'Due Today'].includes(invoice.paymentStatus)) {
+        return invoice.paymentStatus;
+    }
+
+    const total = parseFloat(invoice.total_Amount || 0);
+    if (balance >= total) return 'Due';
+    return 'PartiallyPaid';
+};
+
 
 const router = express.Router();
 
@@ -16,34 +52,54 @@ router.get('/', async (req, res) => {
         const search = req.query.search || '';
         const status = req.query.status || 'All';
 
-        // Build query
-        let query = {};
-
+        // 1. Build Search Query (Ignore status for now)
+        let searchQuery = {};
         if (search) {
-            query.$or = [
+            searchQuery.$or = [
                 { invoiceNumber: { $regex: search, $options: 'i' } },
+                { invoice_number: { $regex: search, $options: 'i' } },
                 { companyName: { $regex: search, $options: 'i' } }
             ];
         }
 
-        if (status !== 'All') {
-            query.paymentStatus = status;
+        console.log(`[FETCH] Status: ${status} | Search: "${search}"`);
+
+        // 2. Fetch all matching search but ignore status for now to filter in memory
+        const allInvoices = await Invoice.find(searchQuery)
+            .sort({ createdAt: -1 })
+            .lean();
+
+        // DEBUG: Check if any invoice has lastEmailSentAt
+        const withDate = allInvoices.filter(inv => inv.lastEmailSentAt);
+        console.log(`[GET /] Total: ${allInvoices.length}, With Email Sent Date: ${withDate.length}`);
+        if (withDate.length > 0) {
+            console.log(`[GET /] Sample with date: ${withDate[0].invoiceNumber || withDate[0].invoice_number} sent at ${withDate[0].lastEmailSentAt}`);
         }
 
-        const invoices = await Invoice.find(query)
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit);
+        // 3. Filter in memory to match frontend logic exactly
+        const filteredInvoices = status === 'All'
+            ? allInvoices
+            : allInvoices.filter(inv => {
+                const dynamicStatus = getPaymentStatus(inv);
+                // Handle "Due" and "Due Today" as "Due" if the user clicked the Due tab
+                if (status === 'Due') return dynamicStatus === 'Due' || dynamicStatus === 'Due Today';
+                return dynamicStatus === status;
+            });
 
-        const total = await Invoice.countDocuments(query);
+        // 4. Apply pagination on filtered results
+        const total = filteredInvoices.length;
+        const paginatedInvoices = filteredInvoices.slice(skip, skip + limit);
+
+        console.log(`[FILTER RESULT] Status: ${status} | Total Match: ${total} | Returning: ${paginatedInvoices.length}`);
 
         res.json({
-            invoices,
+            invoices: paginatedInvoices,
             total,
             pages: Math.ceil(total / limit),
             currentPage: page
         });
     } catch (error) {
+        console.error('Fetch Error:', error);
         res.status(500).json({ message: error.message });
     }
 });
@@ -186,7 +242,31 @@ router.post('/:id/send-email', async (req, res) => {
 
         const type = req.body.type || 'due';
         const emailResult = await sendInvoiceEmail(invoice, config, type);
-        res.json({ message: 'Email sent successfully', result: emailResult });
+
+        // Formatting date for string field
+        const now = new Date();
+        const d = String(now.getDate()).padStart(2, '0');
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const y = now.getFullYear();
+        const formattedDate = `${d}-${m}-${y}`;
+
+        // Update the invoice with both fields
+        const updatedInvoice = await Invoice.findByIdAndUpdate(
+            req.params.id,
+            {
+                lastEmailSentAt: now,
+                emailSentDate: formattedDate
+            },
+            { new: true } // Return the updated document
+        ).lean();
+
+        console.log(`[EMAIL SENT] Invoice ${updatedInvoice.invoiceNumber || updatedInvoice.invoice_number} updated with Sent Date: ${formattedDate}`);
+
+        res.json({
+            message: 'Email sent successfully',
+            result: emailResult,
+            invoice: updatedInvoice
+        });
     } catch (error) {
         console.error('Email Route Error:', error);
         res.status(500).json({ message: error.message });

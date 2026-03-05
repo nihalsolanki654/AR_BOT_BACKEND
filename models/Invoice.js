@@ -21,7 +21,9 @@ const invoiceSchema = new mongoose.Schema({
         type: String,
         enum: ['Due', 'Paid', 'PartiallyPaid', 'Overdue'],
         default: 'Due'
-    }
+    },
+    lastEmailSentAt: { type: Date },
+    emailSentDate: { type: String }
 }, { timestamps: true });
 
 // --- Automatic Company Discovery Middleware ---
