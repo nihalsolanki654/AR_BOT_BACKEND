@@ -3,7 +3,7 @@
  * Professional, Responsive, and Premium HTML template for Invoice Statements
  */
 
-export const getInvoiceEmailTemplate = (invoice, config, type = 'due', assets = {}) => {
+export const getInvoiceEmailTemplate = (invoice, config, type = 'due') => {
     const {
         invoiceNumber,
         invoice_number,
@@ -167,10 +167,10 @@ export const getInvoiceEmailTemplate = (invoice, config, type = 'due', assets = 
                                 <table cellpadding="0" cellspacing="0" border="0" style="margin-top: 15px;">
                                     <tr>
                                         <td style="padding-right: 15px;">
-                                            ${assets.picture1 ? `<img src="${assets.picture1}" alt="Tecnoprism" style="max-height: 70px; display: block;">` : ''}
+                                            <img src="https://i.postimg.cc/rszYzVtC/Picture1.png" alt="Picture" style="max-height: 70px; display: block;">
                                         </td>
                                         <td>
-                                            ${assets.picture2 ? `<img src="${assets.picture2}" alt="Partner" style="max-height: 70px; display: block;">` : ''}
+                                            <img src="https://i.postimg.cc/m2nqKHFM/Picture2.png" alt="Picture" style="max-height: 70px; display: block;">
                                         </td>
                                     </tr>
                                 </table>
