@@ -43,6 +43,10 @@ const memberSchema = new mongoose.Schema({
     lastActiveAt: {
         type: Date,
         default: Date.now
+    },
+    isLoggedIn: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true
